@@ -1,0 +1,466 @@
+/* =========================
+   COURSES CATALOG STYLES
+========================= */
+
+.courses-page-view {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+/* Toast */
+.toast-notification {
+  background: #10b981;
+  color: white;
+  padding: 14px 20px;
+  border-radius: 10px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+  font-weight: 600;
+  animation: modalPop 0.2s ease;
+}
+
+.toast-notification button {
+  background: transparent;
+  border: none;
+  color: white;
+  font-size: 20px;
+  cursor: pointer;
+  line-height: 1;
+}
+
+/* Header Card */
+.courses-header-card {
+  background: white;
+  border-radius: 16px;
+  padding: 28px 32px;
+  border: 1px solid #e5e7eb;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 20px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.02);
+}
+
+.courses-header-text h1 {
+  margin: 0 0 6px 0;
+  font-size: 26px;
+  font-weight: 800;
+  color: #111827;
+}
+
+.courses-header-text p {
+  margin: 0;
+  color: #6b7280;
+  font-size: 15px;
+}
+
+.discount-apply-btn {
+  background: #fef3c7;
+  color: #92400e;
+  border: 1px solid #fde68a;
+  padding: 11px 20px;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.15s ease;
+}
+
+.discount-apply-btn:hover {
+  background: #fde68a;
+}
+
+/* Filters & Search */
+.filter-controls-bar {
+  display: flex;
+  gap: 16px;
+}
+
+.search-input-box {
+  flex: 1;
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.search-icon {
+  position: absolute;
+  left: 16px;
+  font-size: 16px;
+  color: #9ca3af;
+}
+
+.search-input-box input {
+  width: 100%;
+  padding: 13px 44px;
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  font-size: 15px;
+  color: #111827;
+  outline: none;
+  transition: border-color 0.15s;
+}
+
+.search-input-box input:focus {
+  border-color: #2563eb;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+}
+
+.clear-search-btn {
+  position: absolute;
+  right: 14px;
+  background: #f3f4f6;
+  border: none;
+  border-radius: 50%;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  color: #6b7280;
+  cursor: pointer;
+}
+
+.level-select-wrapper select {
+  padding: 13px 18px;
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  font-size: 15px;
+  color: #374151;
+  outline: none;
+  cursor: pointer;
+}
+
+/* Category Pills */
+.category-pills-row {
+  display: flex;
+  gap: 10px;
+  overflow-x: auto;
+  padding-bottom: 4px;
+}
+
+.category-pill {
+  padding: 9px 18px;
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 30px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #4b5563;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.15s ease;
+}
+
+.category-pill:hover {
+  background: #f9fafb;
+  border-color: #d1d5db;
+  color: #111827;
+}
+
+.category-pill.active {
+  background: #2563eb;
+  color: white;
+  border-color: #2563eb;
+  box-shadow: 0 2px 8px rgba(37, 99, 235, 0.25);
+}
+
+/* Catalog Grid */
+.catalog-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 22px;
+}
+
+.catalog-card {
+  background: white;
+  border-radius: 16px;
+  border: 1px solid #e5e7eb;
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.catalog-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 24px -4px rgba(0, 0, 0, 0.07);
+}
+
+.catalog-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 14px;
+}
+
+.rating-pill {
+  font-size: 13px;
+  font-weight: 700;
+  color: #4b5563;
+  background: #fefce8;
+  padding: 3px 8px;
+  border-radius: 6px;
+  border: 1px solid #fef08a;
+}
+
+.catalog-course-title {
+  margin: 0 0 10px 0;
+  font-size: 19px;
+  font-weight: 700;
+  color: #111827;
+  line-height: 1.35;
+}
+
+.catalog-course-desc {
+  font-size: 14px;
+  color: #6b7280;
+  margin: 0 0 20px 0;
+  line-height: 1.5;
+  flex: 1;
+}
+
+.catalog-specs-list {
+  background: #f8fafc;
+  border-radius: 10px;
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 20px;
+}
+
+.spec-item {
+  display: flex;
+  justify-content: space-between;
+  font-size: 13px;
+}
+
+.spec-item span {
+  color: #6b7280;
+}
+
+.spec-item strong {
+  color: #1f2937;
+}
+
+.catalog-card-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-top: 18px;
+  border-top: 1px solid #f1f5f9;
+  margin-top: auto;
+}
+
+.course-fee-tag .fee-amount {
+  font-size: 22px;
+  font-weight: 800;
+  color: #111827;
+}
+
+.course-fee-tag .fee-term {
+  font-size: 12px;
+  color: #6b7280;
+  margin-left: 4px;
+}
+
+.catalog-card-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.details-btn {
+  background: #f3f4f6;
+  color: #374151;
+  border: 1px solid #e5e7eb;
+  padding: 9px 14px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.details-btn:hover {
+  background: #e5e7eb;
+}
+
+.enroll-action-btn {
+  background: #2563eb;
+  color: white;
+  border: none;
+  padding: 9px 18px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.enroll-action-btn:hover {
+  background: #1d4ed8;
+}
+
+.enrolled-btn {
+  background: #dcfce7;
+  color: #15803d;
+  border: 1px solid #bbf7d0;
+  padding: 9px 14px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+/* Modal Content */
+.modal-syllabus-content {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.modal-course-info-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+}
+
+.modal-info-tile {
+  background: #f8fafc;
+  padding: 12px 14px;
+  border-radius: 10px;
+  border: 1px solid #e2e8f0;
+}
+
+.modal-info-tile p {
+  margin: 0 0 4px;
+  font-size: 11px;
+  color: #6b7280;
+  text-transform: uppercase;
+}
+
+.modal-info-tile strong {
+  font-size: 14px;
+  color: #0f172a;
+}
+
+.syllabus-section h4,
+.course-learning-outcomes h4 {
+  margin: 0 0 12px 0;
+  font-size: 16px;
+  font-weight: 700;
+  color: #111827;
+}
+
+.modules-accordion {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.module-item {
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  padding: 14px 16px;
+  background: #ffffff;
+}
+
+.module-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.module-num {
+  font-size: 12px;
+  font-weight: 700;
+  background: #e0e7ff;
+  color: #3730a3;
+  padding: 3px 8px;
+  border-radius: 6px;
+}
+
+.module-header strong {
+  flex: 1;
+  font-size: 14px;
+}
+
+.module-meta {
+  font-size: 12px;
+  color: #6b7280;
+}
+
+.course-learning-outcomes ul {
+  margin: 0;
+  padding-left: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 14px;
+  color: #4b5563;
+}
+
+/* Discount Form */
+.discount-form {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.form-group-item {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.form-group-item label {
+  font-size: 13px;
+  font-weight: 600;
+  color: #374151;
+}
+
+.form-group-item input,
+.form-group-item textarea {
+  padding: 10px 14px;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  font-size: 14px;
+  outline: none;
+}
+
+.form-group-item input:focus,
+.form-group-item textarea:focus {
+  border-color: #2563eb;
+}
+
+/* Responsive */
+@media (max-width: 1200px) {
+  .catalog-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 768px) {
+  .courses-header-card {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .filter-controls-bar {
+    flex-direction: column;
+  }
+  .catalog-grid {
+    grid-template-columns: 1fr;
+  }
+  .modal-course-info-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}

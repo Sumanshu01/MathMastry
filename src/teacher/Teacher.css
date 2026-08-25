@@ -1,0 +1,218 @@
+/* =========================
+   TEACHER PORTAL STYLES
+========================= */
+
+.teacher-page-view {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.teacher-hero-banner {
+  background: linear-gradient(135deg, #0f766e 0%, #0d9488 100%);
+  border-radius: 16px;
+  padding: 30px 34px;
+  color: white;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 20px;
+  box-shadow: 0 10px 25px -5px rgba(13, 148, 136, 0.3);
+}
+
+.teacher-hero-banner h1 {
+  margin: 0 0 6px 0;
+  font-size: 26px;
+  font-weight: 800;
+}
+
+.teacher-hero-banner p {
+  margin: 0;
+  font-size: 15px;
+  opacity: 0.92;
+}
+
+.teacher-action-btn-light {
+  background: white;
+  color: #0f766e;
+  border: none;
+  padding: 11px 20px;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.15s;
+}
+
+.teacher-action-btn-light:hover {
+  background: #f0fdfa;
+  transform: translateY(-2px);
+}
+
+/* Schedule Card */
+.schedule-section-grid {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 24px;
+}
+
+.teacher-card {
+  background: white;
+  border-radius: 16px;
+  border: 1px solid #e5e7eb;
+  padding: 26px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.02);
+}
+
+.teacher-card h3 {
+  margin: 0 0 18px 0;
+  font-size: 19px;
+  font-weight: 700;
+  color: #111827;
+}
+
+.classes-timeline {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.class-slot-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px;
+  border-radius: 12px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  gap: 16px;
+}
+
+.class-slot-time {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: #ccfbf1;
+  color: #0f766e;
+  padding: 8px 12px;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 700;
+  min-width: 90px;
+}
+
+.class-slot-info h4 {
+  margin: 0 0 4px 0;
+  font-size: 15px;
+  font-weight: 700;
+  color: #1e293b;
+}
+
+.class-slot-info p {
+  margin: 0;
+  font-size: 13px;
+  color: #64748b;
+}
+
+.class-slot-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.roster-btn {
+  background: #0d9488;
+  color: white;
+  border: none;
+  padding: 8px 14px;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.roster-btn:hover {
+  background: #0f766e;
+}
+
+/* Availability Manager */
+.availability-day-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 18px;
+  border-bottom: 1px solid #f1f5f9;
+  gap: 16px;
+}
+
+.availability-day-row:last-child {
+  border-bottom: none;
+}
+
+.day-label-box {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 140px;
+}
+
+.day-toggle-input {
+  width: 18px;
+  height: 18px;
+  accent-color: #0d9488;
+  cursor: pointer;
+}
+
+.time-range-inputs {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.time-range-inputs input {
+  padding: 8px 10px;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  font-size: 13px;
+}
+
+/* Roster Table inside Modal */
+.roster-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 12px;
+}
+
+.roster-table th {
+  background: #f8fafc;
+  padding: 12px 14px;
+  text-align: left;
+  font-size: 12px;
+  font-weight: 700;
+  color: #475569;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.roster-table td {
+  padding: 12px 14px;
+  font-size: 13px;
+  color: #1e293b;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.attendance-select {
+  padding: 4px 8px;
+  border-radius: 6px;
+  border: 1px solid #cbd5e1;
+  font-size: 12px;
+  background: white;
+}
+
+/* Responsive */
+@media (max-width: 960px) {
+  .schedule-section-grid {
+    grid-template-columns: 1fr;
+  }
+}
