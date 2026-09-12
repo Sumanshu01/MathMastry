@@ -5,7 +5,7 @@ export const getCurrentUser = async () => {
     const res = await api.get("/users/me");
     if (res.data?.user) return res.data.user;
     if (res.data) return res.data;
-  } catch (_err) {
+  } catch {
     // If endpoint is not available or unauthenticated, check localStorage session fallback
   }
 

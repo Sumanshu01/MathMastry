@@ -9,20 +9,24 @@ function AdminDashboard() {
   const navigate = useNavigate();
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+
+  const loadStats = async () => {
+    try {
+      setLoading(true);
+      setError("");
+      const data = await getAdminStats();
+      setStats(data);
+    } catch (err) {
+      console.error("Error loading admin stats:", err);
+      setError("Failed to load platform analytics. Please check your connection.");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    async function load() {
-      try {
-        setLoading(true);
-        const data = await getAdminStats();
-        setStats(data);
-      } catch (err) {
-        console.error("Error loading admin stats:", err);
-      } finally {
-        setLoading(false);
-      }
-    }
-    load();
+    loadStats();
   }, []);
 
   const recentLogs = [
@@ -52,9 +56,25 @@ function AdminDashboard() {
         </button>
       </div>
 
+      {error && (
+        <div className="courses-error-banner" style={{ margin: "16px 0" }}>
+          <span>⚠️ {error}</span>
+          <button type="button" onClick={loadStats} className="courses-retry-btn">
+            Retry
+          </button>
+        </div>
+      )}
+
       {/* Live Metrics Grid */}
-      {loading || !stats ? (
+      {loading ? (
         <LoadingSpinner text="Aggregating platform metrics..." />
+      ) : !stats ? (
+        <div className="admin-card" style={{ textAlign: "center", padding: "40px" }}>
+          <p style={{ color: "#64748b" }}>Platform metrics could not be loaded.</p>
+          <button type="button" onClick={loadStats} className="courses-retry-btn" style={{ marginTop: "12px" }}>
+            Reload Metrics
+          </button>
+        </div>
       ) : (
         <section className="stats-grid">
           <div className="stat-card" onClick={() => navigate("/admin/users")} style={{ cursor: "pointer" }}>

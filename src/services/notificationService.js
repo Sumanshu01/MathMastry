@@ -42,7 +42,8 @@ export const getNotifications = async () => {
     const res = await api.get("/notifications");
     if (res.data && Array.isArray(res.data.notifications)) return res.data.notifications;
     if (res.data && Array.isArray(res.data)) return res.data;
-  } catch (_err) {
+  } catch {
+    // Falls back to local stub
   }
   return localNotificationsCache;
 };
@@ -50,7 +51,8 @@ export const getNotifications = async () => {
 export const markNotificationRead = async (id) => {
   try {
     await api.patch(`/notifications/${id}/read`);
-  } catch (_err) {
+  } catch {
+    // Falls back to local stub
   }
   localNotificationsCache = localNotificationsCache.map((n) =>
     n.id === id ? { ...n, read: true } : n
@@ -61,7 +63,8 @@ export const markNotificationRead = async (id) => {
 export const markAllNotificationsRead = async () => {
   try {
     await api.patch("/notifications/read-all");
-  } catch (_err) {
+  } catch {
+    // Falls back to local stub
   }
   localNotificationsCache = localNotificationsCache.map((n) => ({ ...n, read: true }));
   return localNotificationsCache;

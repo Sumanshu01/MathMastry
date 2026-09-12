@@ -7,20 +7,23 @@ import "./AdminDashboard.css";
 function AdminReports() {
   const [reports, setReports] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+
+  const loadReports = async () => {
+    try {
+      setError("");
+      const data = await getAdminReports();
+      setReports(data);
+    } catch (err) {
+      console.error("Failed to load reports:", err);
+      setError("Failed to generate platform analytics reports.");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    async function load() {
-      try {
-        setLoading(true);
-        const data = await getAdminReports();
-        setReports(data);
-      } catch (err) {
-        console.error("Failed to load reports:", err);
-      } finally {
-        setLoading(false);
-      }
-    }
-    load();
+    loadReports();
   }, []);
 
   const handleExportCSV = () => {
@@ -53,13 +56,30 @@ function AdminReports() {
           className="admin-primary-btn"
           style={{ background: "#4f46e5" }}
           onClick={handleExportCSV}
+          disabled={!reports}
         >
           📥 Export CSV Summary
         </button>
       </div>
 
-      {loading || !reports ? (
+      {error && (
+        <div className="courses-error-banner" style={{ margin: "16px 0" }}>
+          <span>⚠️ {error}</span>
+          <button type="button" onClick={loadReports} className="courses-retry-btn">
+            Retry
+          </button>
+        </div>
+      )}
+
+      {loading ? (
         <LoadingSpinner text="Computing platform metrics & charts..." />
+      ) : !reports ? (
+        <div className="admin-card" style={{ textAlign: "center", padding: "40px" }}>
+          <p style={{ color: "#64748b" }}>Analytics reports currently unavailable.</p>
+          <button type="button" onClick={loadReports} className="courses-retry-btn" style={{ marginTop: "12px" }}>
+            Reload Analytics
+          </button>
+        </div>
       ) : (
         <>
           {/* Executive Summary Cards */}

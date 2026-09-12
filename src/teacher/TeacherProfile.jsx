@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useAuth } from "../context/AuthContext";
 import { updateCurrentUserProfile } from "../services/authService";
+import { useToast } from "../context/ToastContext";
 import Badge from "../components/common/Badge";
 import "../pages/Profile.css";
 
@@ -8,8 +9,8 @@ function TeacherProfile() {
   const { user, updateUser } = useAuth();
   const [isEditing, setIsEditing] = useState(false);
   const [saveLoading, setSaveLoading] = useState(false);
-  const [message, setMessage] = useState("");
-  const [error, setError] = useState("");
+  const [fieldErrors, setFieldErrors] = useState({});
+  const { showToast } = useToast();
 
   const [formData, setFormData] = useState({
     firstName: user?.firstName || "Sarah",
@@ -21,27 +22,45 @@ function TeacherProfile() {
     bio: "Senior Lecturer in Mathematics with 12+ years of experience training Olympiad medalists and university scholars."
   });
 
+  const validate = () => {
+    const errs = {};
+    if (!formData.firstName.trim()) {
+      errs.firstName = "First name is required.";
+    }
+    if (!formData.lastName.trim()) {
+      errs.lastName = "Last name is required.";
+    }
+    if (formData.phone && !/^[+0-9\s\-()]{7,20}$/.test(formData.phone)) {
+      errs.phone = "Please provide a valid contact phone number.";
+    }
+    setFieldErrors(errs);
+    return Object.keys(errs).length === 0;
+  };
+
   const handleChange = (e) => {
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.value
-    });
+    const { name, value } = e.target;
+    setFormData((prev) => ({
+      ...prev,
+      [name]: value
+    }));
+    if (fieldErrors[name]) {
+      setFieldErrors((prev) => ({ ...prev, [name]: "" }));
+    }
   };
 
   const handleSave = async (e) => {
     e.preventDefault();
-    setError("");
-    setMessage("");
+    if (!validate()) return;
     setSaveLoading(true);
 
     try {
       const updated = await updateCurrentUserProfile(formData);
       updateUser(updated);
       setIsEditing(false);
-      setMessage("Teacher profile updated successfully!");
-      setTimeout(() => setMessage(""), 3500);
+      showToast("Teacher profile updated successfully!", "success");
     } catch (err) {
-      setError(err.response?.data?.error || "Failed to update profile.");
+      const msg = err.response?.data?.error || err.message || "Failed to update profile.";
+      showToast(msg, "error");
     } finally {
       setSaveLoading(false);
     }
@@ -53,9 +72,6 @@ function TeacherProfile() {
 
   return (
     <div className="profile-page-view">
-      {message && <div className="profile-toast success">✅ {message}</div>}
-      {error && <div className="profile-toast error">⚠️ {error}</div>}
-
       <div className="profile-layout-grid">
         <div className="profile-card profile-summary-card">
           <div className="profile-avatar-large" style={{ background: "linear-gradient(135deg, #0f766e, #0d9488)" }}>
@@ -147,8 +163,14 @@ function TeacherProfile() {
                     name="firstName"
                     value={formData.firstName}
                     onChange={handleChange}
+                    className={fieldErrors.firstName ? "input-error" : ""}
                     required
                   />
+                  {fieldErrors.firstName && (
+                    <span className="field-error-text" style={{ color: "#ef4444", fontSize: "12px", marginTop: "4px" }}>
+                      {fieldErrors.firstName}
+                    </span>
+                  )}
                 </div>
 
                 <div className="form-field-group">
@@ -158,8 +180,14 @@ function TeacherProfile() {
                     name="lastName"
                     value={formData.lastName}
                     onChange={handleChange}
+                    className={fieldErrors.lastName ? "input-error" : ""}
                     required
                   />
+                  {fieldErrors.lastName && (
+                    <span className="field-error-text" style={{ color: "#ef4444", fontSize: "12px", marginTop: "4px" }}>
+                      {fieldErrors.lastName}
+                    </span>
+                  )}
                 </div>
 
                 <div className="form-field-group">
@@ -169,7 +197,13 @@ function TeacherProfile() {
                     name="phone"
                     value={formData.phone}
                     onChange={handleChange}
+                    className={fieldErrors.phone ? "input-error" : ""}
                   />
+                  {fieldErrors.phone && (
+                    <span className="field-error-text" style={{ color: "#ef4444", fontSize: "12px", marginTop: "4px" }}>
+                      {fieldErrors.phone}
+                    </span>
+                  )}
                 </div>
 
                 <div className="form-field-group">

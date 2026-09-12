@@ -10,21 +10,25 @@ import "./Progress.css";
 function Progress() {
   const [enrollments, setEnrollments] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
   const [selectedCert, setSelectedCert] = useState(null);
 
-  useEffect(() => {
-    async function load() {
-      try {
-        setLoading(true);
-        const list = await getMyEnrollments();
-        setEnrollments(list);
-      } catch (err) {
-        console.error("Error loading progress data:", err);
-      } finally {
-        setLoading(false);
-      }
+  const loadData = async () => {
+    try {
+      setLoading(true);
+      setError("");
+      const list = await getMyEnrollments();
+      setEnrollments(list);
+    } catch (err) {
+      console.error("Error loading progress data:", err);
+      setError("Unable to compute learning progress benchmarks. Please try again.");
+    } finally {
+      setLoading(false);
     }
-    load();
+  };
+
+  useEffect(() => {
+    loadData();
   }, []);
 
   const totalCourses = enrollments.length;
@@ -35,6 +39,19 @@ function Progress() {
 
   return (
     <div className="progress-page-view">
+      {error && (
+        <div style={{ background: "#fef2f2", border: "1px solid #fecaca", borderRadius: "10px", padding: "12px 16px", marginBottom: "16px", display: "flex", justifyContent: "space-between", alignItems: "center", color: "#991b1b" }}>
+          <span>⚠️ {error}</span>
+          <button
+            type="button"
+            onClick={loadData}
+            style={{ background: "#dc2626", color: "white", border: "none", borderRadius: "6px", padding: "6px 14px", cursor: "pointer", fontWeight: 600, fontSize: "12px" }}
+          >
+            Retry
+          </button>
+        </div>
+      )}
+
       {/* Overview Cards */}
       <section className="progress-metrics-row">
         <div className="progress-metric-card">

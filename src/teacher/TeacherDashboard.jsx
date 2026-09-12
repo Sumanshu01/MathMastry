@@ -11,24 +11,28 @@ function TeacherDashboard() {
   const [courses, setCourses] = useState([]);
   const [availability, setAvailability] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+
+  const loadData = async () => {
+    try {
+      setLoading(true);
+      setError("");
+      const [courseList, avail] = await Promise.all([
+        getTeacherCourses(),
+        getTeacherAvailability()
+      ]);
+      setCourses(courseList);
+      setAvailability(avail);
+    } catch (err) {
+      console.error("Error loading teacher dashboard:", err);
+      setError("Unable to load assigned courses and schedule. Please try again.");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    async function load() {
-      try {
-        setLoading(true);
-        const [courseList, avail] = await Promise.all([
-          getTeacherCourses(),
-          getTeacherAvailability()
-        ]);
-        setCourses(courseList);
-        setAvailability(avail);
-      } catch (err) {
-        console.error("Error loading teacher dashboard:", err);
-      } finally {
-        setLoading(false);
-      }
-    }
-    load();
+    loadData();
   }, []);
 
   const totalAssignedCourses = courses.length;
@@ -54,6 +58,19 @@ function TeacherDashboard() {
 
   return (
     <div className="teacher-page-view">
+      {error && (
+        <div style={{ background: "#fef2f2", border: "1px solid #fecaca", borderRadius: "10px", padding: "12px 16px", marginBottom: "16px", display: "flex", justifyContent: "space-between", alignItems: "center", color: "#991b1b" }}>
+          <span>⚠️ {error}</span>
+          <button
+            type="button"
+            onClick={loadData}
+            style={{ background: "#dc2626", color: "white", border: "none", borderRadius: "6px", padding: "6px 14px", cursor: "pointer", fontWeight: 600, fontSize: "12px" }}
+          >
+            Retry
+          </button>
+        </div>
+      )}
+
       {/* Banner */}
       <div className="teacher-hero-banner">
         <div>

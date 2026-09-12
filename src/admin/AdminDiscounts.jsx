@@ -4,12 +4,15 @@ import LoadingSpinner from "../components/common/LoadingSpinner";
 import EmptyState from "../components/common/EmptyState";
 import Modal from "../components/common/Modal";
 import Badge from "../components/common/Badge";
+import { useToast } from "../context/ToastContext";
 import "./AdminDashboard.css";
 
 function AdminDiscounts() {
   const [discounts, setDiscounts] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
   const [statusFilter, setStatusFilter] = useState("ALL");
+  const { showToast } = useToast();
 
   // Review Modal State
   const [selectedApp, setSelectedApp] = useState(null);
@@ -21,10 +24,12 @@ function AdminDiscounts() {
   const loadDiscounts = async () => {
     try {
       setLoading(true);
+      setError("");
       const list = await getDiscounts();
       setDiscounts(list);
     } catch (err) {
       console.error("Error loading discounts:", err);
+      setError("Failed to load discount requests. Please check your connection.");
     } finally {
       setLoading(false);
     }
@@ -32,7 +37,6 @@ function AdminDiscounts() {
 
   useEffect(() => {
     loadDiscounts();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const handleOpenReview = (app) => {
@@ -49,26 +53,28 @@ function AdminDiscounts() {
         approvedPercentage: Number(approvedPercentage),
         reason: "Approved by administration."
       });
+      showToast(`Approved ${approvedPercentage}% discount for ${selectedApp.studentName}.`, "success");
       await loadDiscounts();
       setIsReviewModalOpen(false);
     } catch (err) {
-      alert("Failed to approve: " + err.message);
+      showToast("Failed to approve: " + (err.response?.data?.message || err.message), "error");
     }
   };
 
   const handleReject = async () => {
-    if (!rejectReason) {
-      alert("Please provide a reason for rejecting the discount request.");
+    if (!rejectReason.trim()) {
+      showToast("Please provide a reason for rejecting the discount request.", "warning");
       return;
     }
     try {
       await reviewDiscount(selectedApp.id, "REJECTED", {
         reason: rejectReason
       });
+      showToast(`Discount request rejected for ${selectedApp.studentName}.`, "info");
       await loadDiscounts();
       setIsReviewModalOpen(false);
     } catch (err) {
-      alert("Failed to reject: " + err.message);
+      showToast("Failed to reject: " + (err.response?.data?.message || err.message), "error");
     }
   };
 
@@ -99,6 +105,15 @@ function AdminDiscounts() {
             </select>
           </div>
         </div>
+
+        {error && (
+          <div className="courses-error-banner" style={{ margin: "16px" }}>
+            <span>⚠️ {error}</span>
+            <button type="button" onClick={loadDiscounts} className="courses-retry-btn">
+              Retry
+            </button>
+          </div>
+        )}
 
         {loading ? (
           <LoadingSpinner text="Fetching discount requests queue..." />

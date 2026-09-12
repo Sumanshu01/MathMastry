@@ -3,30 +3,34 @@ import { getAllEnrollments, updateEnrollmentStatus } from "../services/enrollmen
 import LoadingSpinner from "../components/common/LoadingSpinner";
 import EmptyState from "../components/common/EmptyState";
 import Badge from "../components/common/Badge";
+import { useToast } from "../context/ToastContext";
 import "./AdminDashboard.css";
 
 function AdminEnrollments() {
   const [enrollments, setEnrollments] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("ALL");
-  const [toastMessage, setToastMessage] = useState("");
-
-  useEffect(() => {
-    loadEnrollments();
-  }, []);
+  const { showToast } = useToast();
 
   const loadEnrollments = async () => {
     try {
       setLoading(true);
+      setError("");
       const list = await getAllEnrollments();
       setEnrollments(list);
     } catch (err) {
       console.error("Error loading enrollments:", err);
+      setError("Failed to load enrollment records. Please check your connection.");
     } finally {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    loadEnrollments();
+  }, []);
 
   const handleStatusChange = async (id, newStatus) => {
     try {
@@ -34,10 +38,9 @@ function AdminEnrollments() {
       setEnrollments((prev) =>
         prev.map((e) => (String(e.id) === String(id) ? { ...e, status: newStatus } : e))
       );
-      setToastMessage(`Enrollment status updated to ${newStatus}`);
-      setTimeout(() => setToastMessage(""), 3000);
+      showToast(`Enrollment status updated to ${newStatus}`, "success");
     } catch (err) {
-      alert("Failed to update status: " + err.message);
+      showToast("Failed to update status: " + (err.response?.data?.message || err.message), "error");
     }
   };
 
@@ -55,13 +58,6 @@ function AdminEnrollments() {
 
   return (
     <div className="admin-page-view">
-      {toastMessage && (
-        <div className="toast-notification">
-          <span>✅ {toastMessage}</span>
-          <button type="button" onClick={() => setToastMessage("")}>&times;</button>
-        </div>
-      )}
-
       <div className="admin-card">
         <div className="admin-card-header-bar">
           <div>
@@ -70,6 +66,15 @@ function AdminEnrollments() {
           </div>
           <span className="badge badge-blue">{filteredEnrollments.length} Total Records</span>
         </div>
+
+        {error && (
+          <div className="courses-error-banner" style={{ margin: "16px" }}>
+            <span>⚠️ {error}</span>
+            <button type="button" onClick={loadEnrollments} className="courses-retry-btn">
+              Retry
+            </button>
+          </div>
+        )}
 
         {/* Filters */}
         <div className="admin-table-filters">

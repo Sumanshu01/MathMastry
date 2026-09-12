@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { getCourses } from "../services/courseService";
 import { getMyEnrollments, enrollInCourse } from "../services/enrollmentService";
+import { useToast } from "../context/ToastContext";
 import LoadingSpinner from "../components/common/LoadingSpinner";
 import EmptyState from "../components/common/EmptyState";
 import Modal from "../components/common/Modal";
@@ -10,41 +11,46 @@ import "./Courses.css";
 
 function Courses() {
   const navigate = useNavigate();
+  const { showToast } = useToast();
   const [courses, setCourses] = useState([]);
   const [enrollments, setEnrollments] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
 
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("ALL");
   const [selectedLevel, setSelectedLevel] = useState("ALL");
+  const [selectedTeacher, setSelectedTeacher] = useState("ALL");
 
   // Modals state
   const [selectedCourse, setSelectedCourse] = useState(null);
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
   const [isEnrolling, setIsEnrolling] = useState(false);
-  const [toastMessage, setToastMessage] = useState("");
 
   // Sibling discount modal
   const [isDiscountModalOpen, setIsDiscountModalOpen] = useState(false);
   const [discountForm, setDiscountForm] = useState({ siblingName: "", siblingEmail: "", notes: "" });
   const [discountSuccess, setDiscountSuccess] = useState(false);
 
-  useEffect(() => {
-    async function fetchData() {
-      try {
-        setLoading(true);
-        const [courseList, myEnrollments] = await Promise.all([
-          getCourses(),
-          getMyEnrollments()
-        ]);
-        setCourses(courseList);
-        setEnrollments(myEnrollments);
-      } catch (err) {
-        console.error("Failed to load courses:", err);
-      } finally {
-        setLoading(false);
-      }
+  const fetchData = async () => {
+    try {
+      setLoading(true);
+      setError("");
+      const [courseList, myEnrollments] = await Promise.all([
+        getCourses(),
+        getMyEnrollments()
+      ]);
+      setCourses(courseList);
+      setEnrollments(myEnrollments);
+    } catch (err) {
+      console.error("Failed to load courses:", err);
+      setError("Unable to retrieve course offerings. Please check your network and try again.");
+    } finally {
+      setLoading(false);
     }
+  };
+
+  useEffect(() => {
     fetchData();
   }, []);
 
@@ -52,6 +58,7 @@ function Courses() {
 
   const categories = ["ALL", "Pure Mathematics", "Algebra", "Geometry", "Statistics", "Calculus", "Olympiad"];
   const levels = ["ALL", "Beginner to Intermediate", "Intermediate", "Advanced", "Elite"];
+  const teachers = ["ALL", ...new Set(courses.map((c) => c.teacherName).filter(Boolean))];
 
   const filteredCourses = courses.filter((course) => {
     const matchesSearch =
@@ -65,7 +72,10 @@ function Courses() {
     const matchesLevel =
       selectedLevel === "ALL" || course.level === selectedLevel;
 
-    return matchesSearch && matchesCategory && matchesLevel;
+    const matchesTeacher =
+      selectedTeacher === "ALL" || course.teacherName === selectedTeacher;
+
+    return matchesSearch && matchesCategory && matchesLevel && matchesTeacher;
   });
 
   const handleOpenDetail = (course) => {
@@ -80,10 +90,9 @@ function Courses() {
       const updated = await getMyEnrollments();
       setEnrollments(updated);
       setIsDetailModalOpen(false);
-      setToastMessage(`Successfully enrolled in ${course.title}!`);
-      setTimeout(() => setToastMessage(""), 4000);
+      showToast(`Successfully enrolled in ${course.title}!`, "success");
     } catch (err) {
-      alert("Enrollment failed: " + err.message);
+      showToast("Enrollment failed: " + err.message, "error");
     } finally {
       setIsEnrolling(false);
     }
@@ -96,17 +105,22 @@ function Courses() {
       setIsDiscountModalOpen(false);
       setDiscountSuccess(false);
       setDiscountForm({ siblingName: "", siblingEmail: "", notes: "" });
-      setToastMessage("Sibling discount request submitted to administration!");
-      setTimeout(() => setToastMessage(""), 4000);
-    }, 1500);
+      showToast("Sibling discount request submitted to administration!", "success");
+    }, 1200);
   };
 
   return (
     <div className="courses-page-view">
-      {toastMessage && (
-        <div className="toast-notification">
-          <span>✅ {toastMessage}</span>
-          <button type="button" onClick={() => setToastMessage("")}>&times;</button>
+      {error && (
+        <div style={{ background: "#fef2f2", border: "1px solid #fecaca", borderRadius: "10px", padding: "12px 16px", marginBottom: "16px", display: "flex", justifyContent: "space-between", alignItems: "center", color: "#991b1b" }}>
+          <span>⚠️ {error}</span>
+          <button
+            type="button"
+            onClick={fetchData}
+            style={{ background: "#dc2626", color: "white", border: "none", borderRadius: "6px", padding: "6px 14px", cursor: "pointer", fontWeight: 600, fontSize: "12px" }}
+          >
+            Retry
+          </button>
         </div>
       )}
 
@@ -153,10 +167,24 @@ function Courses() {
           <select
             value={selectedLevel}
             onChange={(e) => setSelectedLevel(e.target.value)}
+            aria-label="Filter by level"
           >
             <option value="ALL">All Levels</option>
             {levels.filter((l) => l !== "ALL").map((lvl) => (
               <option key={lvl} value={lvl}>{lvl}</option>
+            ))}
+          </select>
+        </div>
+
+        <div className="level-select-wrapper">
+          <select
+            value={selectedTeacher}
+            onChange={(e) => setSelectedTeacher(e.target.value)}
+            aria-label="Filter by teacher"
+          >
+            <option value="ALL">All Instructors</option>
+            {teachers.filter((t) => t !== "ALL").map((t) => (
+              <option key={t} value={t}>{t}</option>
             ))}
           </select>
         </div>
@@ -192,6 +220,7 @@ function Courses() {
                 setSearchTerm("");
                 setSelectedCategory("ALL");
                 setSelectedLevel("ALL");
+                setSelectedTeacher("ALL");
               }}
             >
               Clear All Filters

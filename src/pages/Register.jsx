@@ -15,38 +15,137 @@ function Register() {
     role: "STUDENT",
   });
 
+  const [errors, setErrors] = useState({});
+  const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
-  const [error, setError] = useState("");
+  const [serverError, setServerError] = useState("");
+  const [isOffline, setIsOffline] = useState(false);
+
+  const validateField = (name, value) => {
+    switch (name) {
+      case "firstName":
+        if (!value.trim()) return "First name is required.";
+        if (value.trim().length < 2) return "First name must be at least 2 characters.";
+        return "";
+      case "lastName":
+        if (!value.trim()) return "Last name is required.";
+        return "";
+      case "email":
+        if (!value.trim()) return "Email address is required.";
+        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value.trim())) {
+          return "Please enter a valid email address (e.g. name@domain.com).";
+        }
+        return "";
+      case "phone":
+        if (!value.trim()) return "Phone number is required.";
+        if (!/^[0-9+()\s-]{7,20}$/.test(value.trim())) {
+          return "Please enter a valid contact phone number.";
+        }
+        return "";
+      case "password":
+        if (!value) return "Password is required.";
+        if (value.length < 6) return "Password must be at least 6 characters long.";
+        return "";
+      default:
+        return "";
+    }
+  };
 
   const handleChange = (e) => {
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.value,
+    const { name, value } = e.target;
+    setFormData((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
+
+    if (errors[name]) {
+      const err = validateField(name, value);
+      setErrors((prev) => ({
+        ...prev,
+        [name]: err,
+      }));
+    }
+  };
+
+  const handleBlur = (e) => {
+    const { name, value } = e.target;
+    const err = validateField(name, value);
+    setErrors((prev) => ({
+      ...prev,
+      [name]: err,
+    }));
+  };
+
+  const validateForm = () => {
+    const newErrors = {};
+    Object.keys(formData).forEach((field) => {
+      const err = validateField(field, formData[field]);
+      if (err) newErrors[field] = err;
     });
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
 
     setMessage("");
-    setError("");
+    setServerError("");
+    setIsOffline(false);
+
+    if (!validateForm()) {
+      return;
+    }
+
+    setLoading(true);
+
+    const payload = {
+      name: `${formData.firstName.trim()} ${formData.lastName.trim()}`,
+      firstName: formData.firstName.trim(),
+      lastName: formData.lastName.trim(),
+      email: formData.email.trim().toLowerCase(),
+      phone: formData.phone.trim(),
+      password: formData.password,
+      role: formData.role || "STUDENT",
+    };
 
     try {
-      const response = await api.post("/auth/register", formData);
+      const response = await api.post("/auth/register", payload);
 
-      setMessage(response.data.message);
+      const successMsg = response.data?.message || "Registration successful! Redirecting to email verification...";
+      setMessage(successMsg);
 
-      // Save email so VerifyEmail page can use it
-      localStorage.setItem("verificationEmail", formData.email);
+      localStorage.setItem("verificationEmail", payload.email);
 
-      // Go to email verification page
-      navigate("/verify-email");
+      setTimeout(() => {
+        navigate("/verify-email");
+      }, 1000);
     } catch (err) {
-      setError(
-        err.response?.data?.error ||
-          "Registration failed. Please try again."
-      );
+      if (err.code === "ERR_NETWORK" || !err.response) {
+        setIsOffline(true);
+        setServerError(
+          "Backend API at localhost:5000 is unreachable or offline. You can proceed with Demo Verification below."
+        );
+      } else {
+        const data = err.response?.data;
+        if (data?.errors && typeof data.errors === "object") {
+          setErrors(data.errors);
+        }
+        setServerError(
+          data?.error ||
+          data?.message ||
+          "Registration failed. Please verify your details."
+        );
+      }
+    } finally {
+      setLoading(false);
     }
+  };
+
+  const handleDemoProceed = () => {
+    const email = formData.email.trim() || "student@example.com";
+    localStorage.setItem("verificationEmail", email);
+    navigate("/verify-email");
   };
 
   return (
@@ -55,81 +154,124 @@ function Register() {
         <h1>MathMastry</h1>
         <h2>Create Account</h2>
 
-        <form onSubmit={handleSubmit}>
+        <form onSubmit={handleSubmit} noValidate>
           <div className="form-group">
-            <label>First Name</label>
+            <label htmlFor="reg-first-name">First Name *</label>
             <input
+              id="reg-first-name"
               type="text"
               name="firstName"
-              placeholder="Enter your first name"
+              placeholder="e.g. Alex"
               value={formData.firstName}
               onChange={handleChange}
+              onBlur={handleBlur}
+              className={errors.firstName ? "input-error" : ""}
+              disabled={loading}
               required
             />
+            {errors.firstName && (
+              <span className="field-error-text">{errors.firstName}</span>
+            )}
           </div>
 
           <div className="form-group">
-            <label>Last Name</label>
+            <label htmlFor="reg-last-name">Last Name *</label>
             <input
+              id="reg-last-name"
               type="text"
               name="lastName"
-              placeholder="Enter your last name"
+              placeholder="e.g. Mercer"
               value={formData.lastName}
               onChange={handleChange}
+              onBlur={handleBlur}
+              className={errors.lastName ? "input-error" : ""}
+              disabled={loading}
               required
             />
+            {errors.lastName && (
+              <span className="field-error-text">{errors.lastName}</span>
+            )}
           </div>
 
           <div className="form-group">
-            <label>Email</label>
+            <label htmlFor="reg-email">Email Address *</label>
             <input
+              id="reg-email"
               type="email"
               name="email"
-              placeholder="Enter your email"
+              placeholder="e.g. alex@example.com"
               value={formData.email}
               onChange={handleChange}
+              onBlur={handleBlur}
+              className={errors.email ? "input-error" : ""}
+              disabled={loading}
               required
             />
+            {errors.email && (
+              <span className="field-error-text">{errors.email}</span>
+            )}
           </div>
 
           <div className="form-group">
-            <label>Phone</label>
+            <label htmlFor="reg-phone">Contact Phone *</label>
             <input
+              id="reg-phone"
               type="tel"
               name="phone"
-              placeholder="Enter your phone number"
+              placeholder="e.g. +1 (555) 349-8821"
               value={formData.phone}
               onChange={handleChange}
+              onBlur={handleBlur}
+              className={errors.phone ? "input-error" : ""}
+              disabled={loading}
               required
             />
+            {errors.phone && (
+              <span className="field-error-text">{errors.phone}</span>
+            )}
           </div>
 
           <div className="form-group">
-            <label>Password</label>
+            <label htmlFor="reg-password">Password *</label>
             <input
+              id="reg-password"
               type="password"
               name="password"
-              placeholder="Enter your password"
+              placeholder="Min 6 characters"
               value={formData.password}
               onChange={handleChange}
+              onBlur={handleBlur}
+              className={errors.password ? "input-error" : ""}
+              disabled={loading}
               required
             />
+            {errors.password ? (
+              <span className="field-error-text">{errors.password}</span>
+            ) : (
+              <span className="field-hint-text">Minimum 6 characters</span>
+            )}
           </div>
 
           <div className="form-group">
-            <label>Role</label>
+            <label htmlFor="reg-role">Account Role</label>
             <select
+              id="reg-role"
               name="role"
               value={formData.role}
               onChange={handleChange}
+              disabled={loading}
             >
               <option value="STUDENT">Student</option>
-              <option value="TEACHER">Teacher</option>
+              <option value="TEACHER">Teacher / Faculty</option>
             </select>
           </div>
 
-          <button className="register-button" type="submit">
-            Register
+          <button
+            className="register-button"
+            type="submit"
+            disabled={loading}
+          >
+            {loading ? "Creating Account..." : "Register"}
           </button>
         </form>
 
@@ -137,8 +279,21 @@ function Register() {
           <p className="success-message">{message}</p>
         )}
 
-        {error && (
-          <p className="error-message">{error}</p>
+        {serverError && (
+          <p className="error-message">{serverError}</p>
+        )}
+
+        {isOffline && (
+          <div className="offline-demo-box">
+            <p style={{ margin: "0 0 6px" }}>Backend server offline at port 5000.</p>
+            <button
+              type="button"
+              className="offline-demo-btn"
+              onClick={handleDemoProceed}
+            >
+              Continue to Verify Email (Demo) →
+            </button>
+          </div>
         )}
 
         <p className="login-text">
@@ -151,3 +306,4 @@ function Register() {
 }
 
 export default Register;
+

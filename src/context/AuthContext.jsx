@@ -13,16 +13,8 @@ export function AuthProvider({ children }) {
         return null;
       }
     }
-    // Default fallback demo user if testing
-    return {
-      id: "u-student-1",
-      firstName: "Alex",
-      lastName: "Mercer",
-      email: "student@example.com",
-      phone: "+1 (555) 349-8821",
-      role: "STUDENT",
-      emailVerified: true
-    };
+    // If no active saved session, visitor is unauthenticated (null)
+    return null;
   });
 
   const [loading, setLoading] = useState(true);

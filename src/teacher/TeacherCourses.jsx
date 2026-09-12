@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { getTeacherCourses, getCourseRoster } from "../services/teacherService";
+import { useToast } from "../context/ToastContext";
 import LoadingSpinner from "../components/common/LoadingSpinner";
 import Modal from "../components/common/Modal";
 import Badge from "../components/common/Badge";
@@ -7,8 +8,10 @@ import EmptyState from "../components/common/EmptyState";
 import "./Teacher.css";
 
 function TeacherCourses() {
+  const { showToast } = useToast();
   const [courses, setCourses] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
 
   // Roster state
   const [selectedCourse, setSelectedCourse] = useState(null);
@@ -16,19 +19,22 @@ function TeacherCourses() {
   const [rosterLoading, setRosterLoading] = useState(false);
   const [isRosterModalOpen, setIsRosterModalOpen] = useState(false);
 
-  useEffect(() => {
-    async function load() {
-      try {
-        setLoading(true);
-        const list = await getTeacherCourses();
-        setCourses(list);
-      } catch (err) {
-        console.error("Error loading assigned courses:", err);
-      } finally {
-        setLoading(false);
-      }
+  const loadData = async () => {
+    try {
+      setLoading(true);
+      setError("");
+      const list = await getTeacherCourses();
+      setCourses(list);
+    } catch (err) {
+      console.error("Error loading assigned courses:", err);
+      setError("Unable to load assigned courses. Please try again.");
+    } finally {
+      setLoading(false);
     }
-    load();
+  };
+
+  useEffect(() => {
+    loadData();
   }, []);
 
   const handleOpenRoster = async (course) => {
@@ -40,13 +46,52 @@ function TeacherCourses() {
       setRoster(studentList);
     } catch (err) {
       console.error("Error loading roster:", err);
+      showToast("Could not load roster for " + course.title, "error");
     } finally {
       setRosterLoading(false);
     }
   };
 
+  const handleUpdateGrade = (studentId, studentName) => {
+    const newGrade = window.prompt(`Update semester grade for ${studentName}:`, "A (94%)");
+    if (!newGrade) return;
+    setRoster((prev) =>
+      prev.map((s) => (s.id === studentId ? { ...s, grade: newGrade } : s))
+    );
+    showToast(`Updated grade for ${studentName} to ${newGrade}`, "success");
+  };
+
+  const handleExportRoster = () => {
+    if (!selectedCourse || roster.length === 0) return;
+    const rows = [
+      ["Student Name", "Email", "Enrolled Date", "Progress %", "Grade", "Status"],
+      ...roster.map((s) => [s.studentName, s.studentEmail, s.enrolledAt, `${s.progress}%`, s.grade || "In Progress", s.status])
+    ];
+    const csvContent = "data:text/csv;charset=utf-8," + rows.map((e) => e.join(",")).join("\n");
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement("a");
+    link.setAttribute("href", encodedUri);
+    link.setAttribute("download", `roster_${selectedCourse.id}_${new Date().toISOString().split("T")[0]}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    showToast("Class roster exported successfully.", "info");
+  };
+
   return (
     <div className="teacher-page-view">
+      {error && (
+        <div style={{ background: "#fef2f2", border: "1px solid #fecaca", borderRadius: "10px", padding: "12px 16px", marginBottom: "16px", display: "flex", justifyContent: "space-between", alignItems: "center", color: "#991b1b" }}>
+          <span>⚠️ {error}</span>
+          <button
+            type="button"
+            onClick={loadData}
+            style={{ background: "#dc2626", color: "white", border: "none", borderRadius: "6px", padding: "6px 14px", cursor: "pointer", fontWeight: 600, fontSize: "12px" }}
+          >
+            Retry
+          </button>
+        </div>
+      )}
       <div className="courses-header-card">
         <div className="courses-header-text">
           <h1>My Assigned Courses & Class Rosters</h1>
@@ -119,13 +164,25 @@ function TeacherCourses() {
           title={`Class Roster: ${selectedCourse.title}`}
           size="lg"
           footer={
-            <button
-              type="button"
-              className="details-btn"
-              onClick={() => setIsRosterModalOpen(false)}
-            >
-              Close Roster
-            </button>
+            <div style={{ display: "flex", gap: "10px", justifyContent: "flex-end", width: "100%" }}>
+              {roster.length > 0 && (
+                <button
+                  type="button"
+                  className="details-btn"
+                  onClick={handleExportRoster}
+                  style={{ background: "#f0fdf4", color: "#166534", borderColor: "#86efac" }}
+                >
+                  📥 Export CSV
+                </button>
+              )}
+              <button
+                type="button"
+                className="details-btn"
+                onClick={() => setIsRosterModalOpen(false)}
+              >
+                Close Roster
+              </button>
+            </div>
           }
         >
           {rosterLoading ? (
@@ -147,6 +204,7 @@ function TeacherCourses() {
                     <th>Progress</th>
                     <th>Grade</th>
                     <th>Status</th>
+                    <th>Action</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -180,6 +238,16 @@ function TeacherCourses() {
                         <Badge variant={student.status === "ACTIVE" ? "green" : "gray"}>
                           {student.status || "ACTIVE"}
                         </Badge>
+                      </td>
+                      <td>
+                        <button
+                          type="button"
+                          className="admin-btn-sm admin-btn-blue"
+                          onClick={() => handleUpdateGrade(student.id, student.studentName)}
+                          style={{ padding: "4px 8px", fontSize: "11px" }}
+                        >
+                          Grade
+                        </button>
                       </td>
                     </tr>
                   ))}

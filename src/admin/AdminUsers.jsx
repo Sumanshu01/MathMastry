@@ -4,6 +4,7 @@ import LoadingSpinner from "../components/common/LoadingSpinner";
 import EmptyState from "../components/common/EmptyState";
 import Modal from "../components/common/Modal";
 import Badge from "../components/common/Badge";
+import { useToast } from "../context/ToastContext";
 import "./AdminDashboard.css";
 
 function AdminUsers() {
@@ -13,6 +14,7 @@ function AdminUsers() {
 
   const [searchTerm, setSearchTerm] = useState("");
   const [roleFilter, setRoleFilter] = useState("ALL");
+  const { showToast } = useToast();
 
   // Create User Modal
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
@@ -55,7 +57,7 @@ function AdminUsers() {
 
   useEffect(() => {
     loadUsers();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const handleDelete = async (id) => {
@@ -68,10 +70,15 @@ function AdminUsers() {
       console.warn("API delete failed:", err.message);
     }
     setUsers((currentUsers) => currentUsers.filter((user) => String(user.id) !== String(id)));
+    showToast("User account deleted.", "info");
   };
 
   const handleCreateUser = (e) => {
     e.preventDefault();
+    if (!newUser.firstName.trim() || !newUser.lastName.trim() || !newUser.email.trim()) {
+      showToast("Please fill in all required user fields.", "warning");
+      return;
+    }
     const created = {
       id: `u-${Date.now()}`,
       ...newUser,
@@ -80,6 +87,7 @@ function AdminUsers() {
     setUsers([created, ...users]);
     setIsCreateModalOpen(false);
     setNewUser({ firstName: "", lastName: "", email: "", phone: "", role: "STUDENT" });
+    showToast(`User account created for ${created.firstName} ${created.lastName}.`, "success");
   };
 
   const filteredUsers = users.filter((user) => {
@@ -107,7 +115,14 @@ function AdminUsers() {
           </button>
         </div>
 
-        {error && <p className="error-message">{error}</p>}
+        {error && (
+          <div className="courses-error-banner" style={{ margin: "16px" }}>
+            <span>⚠️ {error}</span>
+            <button type="button" onClick={loadUsers} className="courses-retry-btn">
+              Retry
+            </button>
+          </div>
+        )}
 
         {/* Filters */}
         <div className="admin-table-filters">

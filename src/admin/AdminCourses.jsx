@@ -4,13 +4,16 @@ import LoadingSpinner from "../components/common/LoadingSpinner";
 import EmptyState from "../components/common/EmptyState";
 import Modal from "../components/common/Modal";
 import Badge from "../components/common/Badge";
+import { useToast } from "../context/ToastContext";
 import "./AdminDashboard.css";
 
 function AdminCourses() {
   const [courses, setCourses] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("ALL");
+  const { showToast } = useToast();
 
   // Modal State
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -26,21 +29,23 @@ function AdminCourses() {
     capacity: 25
   });
 
-  useEffect(() => {
-    loadCourses();
-  }, []);
-
   const loadCourses = async () => {
     try {
       setLoading(true);
+      setError("");
       const list = await getCourses();
       setCourses(list);
     } catch (err) {
       console.error("Error loading courses:", err);
+      setError("Failed to load courses. Please check your connection.");
     } finally {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    loadCourses();
+  }, []);
 
   const handleOpenCreate = () => {
     setEditingCourse(null);
@@ -74,16 +79,35 @@ function AdminCourses() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (!formData.title.trim()) {
+      showToast("Course title is required.", "warning");
+      return;
+    }
+    if (!formData.description.trim()) {
+      showToast("Course syllabus description is required.", "warning");
+      return;
+    }
+    if (Number(formData.fee) < 0) {
+      showToast("Tuition fee must be a valid non-negative amount.", "warning");
+      return;
+    }
+    if (Number(formData.capacity) < 1) {
+      showToast("Course capacity must be at least 1 student.", "warning");
+      return;
+    }
+
     try {
       if (editingCourse) {
         await updateCourse(editingCourse.id, formData);
+        showToast("Course updated successfully!", "success");
       } else {
         await createCourse(formData);
+        showToast("New course published successfully!", "success");
       }
       await loadCourses();
       setIsModalOpen(false);
     } catch (err) {
-      alert("Failed to save course: " + err.message);
+      showToast("Failed to save course: " + (err.response?.data?.message || err.message), "error");
     }
   };
 
@@ -92,8 +116,9 @@ function AdminCourses() {
     try {
       await deleteCourse(id);
       setCourses((prev) => prev.filter((c) => String(c.id) !== String(id)));
+      showToast("Course removed from catalog.", "info");
     } catch (err) {
-      alert("Failed to delete course: " + err.message);
+      showToast("Failed to delete course: " + (err.response?.data?.message || err.message), "error");
     }
   };
 
@@ -117,6 +142,15 @@ function AdminCourses() {
             + Add New Math Course
           </button>
         </div>
+
+        {error && (
+          <div className="courses-error-banner" style={{ margin: "16px" }}>
+            <span>⚠️ {error}</span>
+            <button type="button" onClick={loadCourses} className="courses-retry-btn">
+              Retry
+            </button>
+          </div>
+        )}
 
         {/* Filters */}
         <div className="admin-table-filters">

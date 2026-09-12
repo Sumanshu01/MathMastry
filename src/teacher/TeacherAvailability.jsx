@@ -1,27 +1,32 @@
 import { useState, useEffect } from "react";
 import { getTeacherAvailability, updateTeacherAvailability } from "../services/teacherService";
 import LoadingSpinner from "../components/common/LoadingSpinner";
+import { useToast } from "../context/ToastContext";
 import "./Teacher.css";
 
 function TeacherAvailability() {
   const [availability, setAvailability] = useState(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [feedback, setFeedback] = useState("");
+  const [error, setError] = useState("");
+  const { showToast } = useToast();
+
+  const loadAvailability = async () => {
+    try {
+      setLoading(true);
+      setError("");
+      const data = await getTeacherAvailability();
+      setAvailability(data);
+    } catch (err) {
+      console.error("Failed to load availability:", err);
+      setError("Unable to load availability schedule. Please check your connection.");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    async function load() {
-      try {
-        setLoading(true);
-        const data = await getTeacherAvailability();
-        setAvailability(data);
-      } catch (err) {
-        console.error("Failed to load availability:", err);
-      } finally {
-        setLoading(false);
-      }
-    }
-    load();
+    loadAvailability();
   }, []);
 
   const handleSlotToggle = (index) => {
@@ -41,10 +46,9 @@ function TeacherAvailability() {
     try {
       setSaving(true);
       await updateTeacherAvailability(availability);
-      setFeedback("Weekly teaching availability updated successfully!");
-      setTimeout(() => setFeedback(""), 3500);
+      showToast("Weekly teaching availability updated successfully!", "success");
     } catch (err) {
-      alert("Failed to save availability: " + err.message);
+      showToast("Failed to save availability: " + (err.response?.data?.message || err.message), "error");
     } finally {
       setSaving(false);
     }
@@ -61,14 +65,24 @@ function TeacherAvailability() {
         </div>
       </div>
 
-      {feedback && (
-        <div className="profile-toast success">
-          ✅ {feedback}
+      {error && (
+        <div className="courses-error-banner">
+          <span>⚠️ {error}</span>
+          <button type="button" onClick={loadAvailability} className="courses-retry-btn">
+            Retry
+          </button>
         </div>
       )}
 
-      {loading || !availability ? (
+      {loading ? (
         <LoadingSpinner text="Loading availability schedule..." />
+      ) : !availability ? (
+        <div className="teacher-card" style={{ textAlign: "center", padding: "40px" }}>
+          <p style={{ color: "#64748b" }}>Unable to display schedule.</p>
+          <button type="button" onClick={loadAvailability} className="courses-retry-btn" style={{ marginTop: "12px" }}>
+            Reload Schedule
+          </button>
+        </div>
       ) : (
         <form onSubmit={handleSave} className="teacher-card">
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "20px" }}>

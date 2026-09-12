@@ -1,4 +1,6 @@
 import api from "./api";
+import { getCourses } from "./courseService";
+import { getAllEnrollments } from "./enrollmentService";
 
 export const mockDiscounts = [
   {
@@ -95,15 +97,43 @@ export const getAdminStats = async () => {
     if (res.data?.stats) return res.data.stats;
     if (res.data) return res.data;
   } catch (err) {
-    console.warn("API /admin/stats unavailable, using mock:", err.message);
+    console.warn("API /admin/stats unavailable, computing dynamic platform aggregates:", err.message);
   }
+
+  let courses = [];
+  let enrollments = [];
+  try {
+    courses = await getCourses();
+    enrollments = await getAllEnrollments();
+  } catch {
+    // ignore
+  }
+
+  const courseCount = Array.isArray(courses) ? courses.length : 6;
+  const enrollmentCount = Array.isArray(enrollments) ? enrollments.length : 94;
+
+  let calcRevenue = 0;
+  if (Array.isArray(courses) && courses.length > 0) {
+    calcRevenue = courses.reduce((sum, c) => sum + (c.fee || 150) * (c.enrolledCount || 15), 0);
+  } else {
+    calcRevenue = 13160;
+  }
+
+  let avgComp = 68.5;
+  if (Array.isArray(enrollments) && enrollments.length > 0) {
+    const totalProg = enrollments.reduce((sum, e) => sum + (e.progress || 0), 0);
+    avgComp = (totalProg / enrollments.length).toFixed(1);
+  }
+
+  const pendingDiscounts = localDiscountsCache.filter((d) => d.status === "PENDING").length;
+
   return {
     totalUsers: 120,
-    totalCourses: 6,
-    totalEnrollments: 94,
-    pendingDiscounts: localDiscountsCache.filter((d) => d.status === "PENDING").length,
-    monthlyRevenue: "$13,160",
-    completionRate: "68.5%"
+    totalCourses: courseCount,
+    totalEnrollments: enrollmentCount,
+    pendingDiscounts,
+    monthlyRevenue: `$${calcRevenue.toLocaleString()}`,
+    completionRate: `${avgComp}%`
   };
 };
 

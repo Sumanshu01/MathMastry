@@ -2,15 +2,16 @@ import { useState, useEffect } from "react";
 import { useAuth } from "../context/AuthContext";
 import { updateCurrentUserProfile } from "../services/authService";
 import { getMyEnrollments } from "../services/enrollmentService";
+import { useToast } from "../context/ToastContext";
 import Badge from "../components/common/Badge";
 import "./Profile.css";
 
 function Profile() {
   const { user, updateUser } = useAuth();
+  const { showToast } = useToast();
   const [isEditing, setIsEditing] = useState(false);
   const [saveLoading, setSaveLoading] = useState(false);
-  const [message, setMessage] = useState("");
-  const [error, setError] = useState("");
+  const [fieldErrors, setFieldErrors] = useState({});
   const [myEnrollments, setMyEnrollments] = useState([]);
 
   const [formData, setFormData] = useState({
@@ -18,8 +19,8 @@ function Profile() {
     lastName: user?.lastName || "Mercer",
     email: user?.email || "student@example.com",
     phone: user?.phone || "+1 (555) 349-8821",
-    gradeLevel: "Grade 11 - Advanced Mathematics Track",
-    bio: "Passionate about pure mathematics, proof algorithms, and participating in Olympiad competitions."
+    gradeLevel: user?.gradeLevel || "Grade 11 - Advanced Mathematics Track",
+    bio: user?.bio || "Passionate about pure mathematics, proof algorithms, and participating in Olympiad competitions."
   });
 
   useEffect(() => {
@@ -27,41 +28,61 @@ function Profile() {
       try {
         const list = await getMyEnrollments();
         setMyEnrollments(list);
-      } catch (_err) {
-        // ignore
+      } catch {
+        // Fallback handled inside enrollmentService
       }
     }
     loadEnrollments();
   }, []);
 
   const handleChange = (e) => {
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.value
-    });
+    const { name, value } = e.target;
+    setFormData((prev) => ({
+      ...prev,
+      [name]: value
+    }));
+    if (fieldErrors[name]) {
+      setFieldErrors((prev) => ({ ...prev, [name]: "" }));
+    }
+  };
+
+  const validate = () => {
+    const errors = {};
+    if (!formData.firstName.trim()) {
+      errors.firstName = "First name is required.";
+    }
+    if (!formData.lastName.trim()) {
+      errors.lastName = "Last name is required.";
+    }
+    if (formData.phone && !/^[0-9+()\s-]{7,20}$/.test(formData.phone.trim())) {
+      errors.phone = "Please enter a valid phone number.";
+    }
+    setFieldErrors(errors);
+    return Object.keys(errors).length === 0;
   };
 
   const handleSave = async (e) => {
     e.preventDefault();
-    setError("");
-    setMessage("");
+    if (!validate()) {
+      return;
+    }
+
     setSaveLoading(true);
 
     try {
       const updated = await updateCurrentUserProfile({
-        firstName: formData.firstName,
-        lastName: formData.lastName,
-        phone: formData.phone,
-        bio: formData.bio,
-        gradeLevel: formData.gradeLevel
+        firstName: formData.firstName.trim(),
+        lastName: formData.lastName.trim(),
+        phone: formData.phone.trim(),
+        bio: formData.bio.trim(),
+        gradeLevel: formData.gradeLevel.trim()
       });
 
       updateUser(updated);
       setIsEditing(false);
-      setMessage("Profile updated successfully!");
-      setTimeout(() => setMessage(""), 3500);
+      showToast("Profile updated successfully!", "success");
     } catch (err) {
-      setError(err.response?.data?.error || "Failed to update profile.");
+      showToast(err.response?.data?.error || "Failed to update profile.", "error");
     } finally {
       setSaveLoading(false);
     }
@@ -73,9 +94,6 @@ function Profile() {
 
   return (
     <div className="profile-page-view">
-      {message && <div className="profile-toast success">✅ {message}</div>}
-      {error && <div className="profile-toast error">⚠️ {error}</div>}
-
       <div className="profile-layout-grid">
         {/* Left Card: Summary Avatar */}
         <div className="profile-card profile-summary-card">
@@ -166,33 +184,44 @@ function Profile() {
               </div>
             </div>
           ) : (
-            <form onSubmit={handleSave} className="profile-edit-form">
+            <form onSubmit={handleSave} className="profile-edit-form" noValidate>
               <div className="form-fields-grid">
                 <div className="form-field-group">
-                  <label>First Name *</label>
+                  <label htmlFor="prof-first-name">First Name *</label>
                   <input
+                    id="prof-first-name"
                     type="text"
                     name="firstName"
                     value={formData.firstName}
                     onChange={handleChange}
+                    className={fieldErrors.firstName ? "input-error" : ""}
                     required
                   />
+                  {fieldErrors.firstName && (
+                    <span className="field-error-text">{fieldErrors.firstName}</span>
+                  )}
                 </div>
 
                 <div className="form-field-group">
-                  <label>Last Name *</label>
+                  <label htmlFor="prof-last-name">Last Name *</label>
                   <input
+                    id="prof-last-name"
                     type="text"
                     name="lastName"
                     value={formData.lastName}
                     onChange={handleChange}
+                    className={fieldErrors.lastName ? "input-error" : ""}
                     required
                   />
+                  {fieldErrors.lastName && (
+                    <span className="field-error-text">{fieldErrors.lastName}</span>
+                  )}
                 </div>
 
                 <div className="form-field-group">
-                  <label>Email Address</label>
+                  <label htmlFor="prof-email">Email Address</label>
                   <input
+                    id="prof-email"
                     type="email"
                     value={formData.email}
                     disabled
@@ -201,13 +230,18 @@ function Profile() {
                 </div>
 
                 <div className="form-field-group">
-                  <label>Phone Number</label>
+                  <label htmlFor="prof-phone">Phone Number</label>
                   <input
+                    id="prof-phone"
                     type="tel"
                     name="phone"
                     value={formData.phone}
                     onChange={handleChange}
+                    className={fieldErrors.phone ? "input-error" : ""}
                   />
+                  {fieldErrors.phone && (
+                    <span className="field-error-text">{fieldErrors.phone}</span>
+                  )}
                 </div>
 
                 <div className="form-field-group full-width">
