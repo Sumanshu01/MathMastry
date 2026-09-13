@@ -3,7 +3,7 @@ import { useAuth } from "../../context/AuthContext";
 import "./Layout.css";
 
 export default function Sidebar({ mobileOpen, setMobileOpen }) {
-  const { role, logout, setRoleForTesting } = useAuth();
+  const { role, logout } = useAuth();
   const navigate = useNavigate();
 
   const handleLogout = async () => {
@@ -80,45 +80,6 @@ export default function Sidebar({ mobileOpen, setMobileOpen }) {
           ))}
         </nav>
 
-        {/* Demo Quick Role Switcher for instant evaluator testing */}
-        <div className="demo-role-switcher">
-          <p>Switch Role View</p>
-          <div className="role-btn-group">
-            <button
-              type="button"
-              className={`role-btn ${role === "STUDENT" ? "active-role" : ""}`}
-              onClick={() => {
-                setRoleForTesting("STUDENT");
-                navigate("/dashboard");
-                closeMobile();
-              }}
-            >
-              Student
-            </button>
-            <button
-              type="button"
-              className={`role-btn ${role === "TEACHER" ? "active-role" : ""}`}
-              onClick={() => {
-                setRoleForTesting("TEACHER");
-                navigate("/teacher");
-                closeMobile();
-              }}
-            >
-              Teacher
-            </button>
-            <button
-              type="button"
-              className={`role-btn ${role === "ADMIN" ? "active-role" : ""}`}
-              onClick={() => {
-                setRoleForTesting("ADMIN");
-                navigate("/admin");
-                closeMobile();
-              }}
-            >
-              Admin
-            </button>
-          </div>
-        </div>
 
         <button className="sidebar-logout-btn" type="button" onClick={handleLogout}>
           <span>🚪</span>

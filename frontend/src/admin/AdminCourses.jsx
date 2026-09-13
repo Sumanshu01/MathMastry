@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import api from "../services/api";
 import { getCourses, createCourse, updateCourse, deleteCourse } from "../services/courseService";
 import LoadingSpinner from "../components/common/LoadingSpinner";
 import EmptyState from "../components/common/EmptyState";
@@ -7,9 +8,22 @@ import Badge from "../components/common/Badge";
 import { useToast } from "../context/ToastContext";
 import "./AdminDashboard.css";
 
+const EMPTY_FORM = {
+  title: "",
+  category: "Pure Mathematics",
+  level: "Intermediate",
+  description: "",
+  teacherId: "",
+  schedule: "",
+  fee: 150,
+  capacity: 25,
+};
+
 function AdminCourses() {
   const [courses, setCourses] = useState([]);
+  const [teachers, setTeachers] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [teachersLoading, setTeachersLoading] = useState(true);
   const [error, setError] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("ALL");
@@ -18,17 +32,10 @@ function AdminCourses() {
   // Modal State
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingCourse, setEditingCourse] = useState(null);
-  const [formData, setFormData] = useState({
-    title: "",
-    category: "Pure Mathematics",
-    level: "Intermediate",
-    description: "",
-    teacherName: "Dr. Sarah Jenkins",
-    schedule: "Mon & Wed • 4:00 PM - 5:30 PM",
-    fee: 150,
-    capacity: 25
-  });
+  const [formData, setFormData] = useState(EMPTY_FORM);
+  const [submitting, setSubmitting] = useState(false);
 
+  // Load courses from API
   const loadCourses = async () => {
     try {
       setLoading(true);
@@ -43,21 +50,35 @@ function AdminCourses() {
     }
   };
 
+  // Load ALL teachers from real DB (includes newly registered ones)
+  const loadTeachers = async () => {
+    try {
+      setTeachersLoading(true);
+      const res = await api.get("/admin/teachers");
+      const list = res.data.teachers || [];
+      setTeachers(list);
+      // Pre-select first teacher if form is empty
+      if (list.length > 0 && !formData.teacherId) {
+        setFormData((prev) => ({ ...prev, teacherId: list[0].id }));
+      }
+    } catch (err) {
+      console.warn("Failed to load teachers:", err.message);
+    } finally {
+      setTeachersLoading(false);
+    }
+  };
+
   useEffect(() => {
     loadCourses();
+    loadTeachers();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const handleOpenCreate = () => {
     setEditingCourse(null);
     setFormData({
-      title: "",
-      category: "Pure Mathematics",
-      level: "Intermediate",
-      description: "",
-      teacherName: "Dr. Sarah Jenkins",
-      schedule: "Mon & Wed • 4:00 PM - 5:30 PM",
-      fee: 150,
-      capacity: 25
+      ...EMPTY_FORM,
+      teacherId: teachers.length > 0 ? teachers[0].id : "",
     });
     setIsModalOpen(true);
   };
@@ -69,10 +90,10 @@ function AdminCourses() {
       category: course.category,
       level: course.level,
       description: course.description,
-      teacherName: course.teacherName,
+      teacherId: course.teacherId || course.teacher_id || (teachers[0]?.id ?? ""),
       schedule: course.schedule,
       fee: course.fee,
-      capacity: course.capacity
+      capacity: course.capacity,
     });
     setIsModalOpen(true);
   };
@@ -87,6 +108,10 @@ function AdminCourses() {
       showToast("Course syllabus description is required.", "warning");
       return;
     }
+    if (!formData.teacherId) {
+      showToast("Please assign a faculty instructor.", "warning");
+      return;
+    }
     if (Number(formData.fee) < 0) {
       showToast("Tuition fee must be a valid non-negative amount.", "warning");
       return;
@@ -96,18 +121,37 @@ function AdminCourses() {
       return;
     }
 
+    // Build payload with teacherId as integer
+    const payload = {
+      title: formData.title.trim(),
+      name: formData.title.trim(),
+      category: formData.category,
+      level: formData.level,
+      description: formData.description.trim(),
+      teacherId: Number(formData.teacherId),
+      schedule: formData.schedule.trim(),
+      fee: Number(formData.fee),
+      capacity: Number(formData.capacity),
+    };
+
     try {
+      setSubmitting(true);
       if (editingCourse) {
-        await updateCourse(editingCourse.id, formData);
+        await updateCourse(editingCourse.id, payload);
         showToast("Course updated successfully!", "success");
       } else {
-        await createCourse(formData);
+        await createCourse(payload);
         showToast("New course published successfully!", "success");
       }
       await loadCourses();
       setIsModalOpen(false);
     } catch (err) {
-      showToast("Failed to save course: " + (err.response?.data?.message || err.message), "error");
+      showToast(
+        "Failed to save course: " + (err.response?.data?.error || err.response?.data?.message || err.message),
+        "error"
+      );
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -118,14 +162,17 @@ function AdminCourses() {
       setCourses((prev) => prev.filter((c) => String(c.id) !== String(id)));
       showToast("Course removed from catalog.", "info");
     } catch (err) {
-      showToast("Failed to delete course: " + (err.response?.data?.message || err.message), "error");
+      showToast(
+        "Failed to delete course: " + (err.response?.data?.message || err.message),
+        "error"
+      );
     }
   };
 
   const filteredCourses = courses.filter((c) => {
     const matchesSearch =
-      c.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      c.teacherName.toLowerCase().includes(searchTerm.toLowerCase());
+      (c.title || "").toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (c.teacherName || "").toLowerCase().includes(searchTerm.toLowerCase());
     const matchesCat = categoryFilter === "ALL" || c.category === categoryFilter;
     return matchesSearch && matchesCat;
   });
@@ -192,7 +239,7 @@ function AdminCourses() {
               <thead>
                 <tr>
                   <th>Course Title</th>
-                  <th>Category & Level</th>
+                  <th>Category &amp; Level</th>
                   <th>Assigned Faculty</th>
                   <th>Schedule</th>
                   <th>Capacity</th>
@@ -216,7 +263,7 @@ function AdminCourses() {
                       </div>
                     </td>
                     <td>
-                      <strong>{c.teacherName}</strong>
+                      <strong>{c.teacherName || "Unassigned"}</strong>
                     </td>
                     <td style={{ fontSize: "13px", color: "#475569" }}>{c.schedule}</td>
                     <td>
@@ -263,6 +310,7 @@ function AdminCourses() {
               type="button"
               className="admin-btn-sm admin-btn-gray"
               onClick={() => setIsModalOpen(false)}
+              disabled={submitting}
             >
               Cancel
             </button>
@@ -270,8 +318,9 @@ function AdminCourses() {
               type="button"
               className="admin-primary-btn"
               onClick={handleSubmit}
+              disabled={submitting}
             >
-              {editingCourse ? "Save Changes" : "Publish Course"}
+              {submitting ? "Saving..." : editingCourse ? "Save Changes" : "Publish Course"}
             </button>
           </>
         }
@@ -322,21 +371,36 @@ function AdminCourses() {
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px" }}>
             <div className="form-group-item">
               <label>Assigned Faculty Instructor *</label>
-              <select
-                className="admin-filter-select"
-                value={formData.teacherName}
-                onChange={(e) => setFormData({ ...formData, teacherName: e.target.value })}
-              >
-                <option value="Dr. Sarah Jenkins">Dr. Sarah Jenkins (Cambridge)</option>
-                <option value="Prof. Marcus Vance">Prof. Marcus Vance (MIT)</option>
-                <option value="Elena Rostova, M.Sc.">Elena Rostova, M.Sc. (Stanford)</option>
-              </select>
+              {teachersLoading ? (
+                <select className="admin-filter-select" disabled>
+                  <option>Loading teachers...</option>
+                </select>
+              ) : teachers.length === 0 ? (
+                <select className="admin-filter-select" disabled>
+                  <option>No teachers registered yet</option>
+                </select>
+              ) : (
+                <select
+                  className="admin-filter-select"
+                  value={formData.teacherId}
+                  onChange={(e) => setFormData({ ...formData, teacherId: Number(e.target.value) })}
+                  required
+                >
+                  <option value="">— Select a teacher —</option>
+                  {teachers.map((t) => (
+                    <option key={t.id} value={t.id}>
+                      {t.fullName} ({t.email})
+                    </option>
+                  ))}
+                </select>
+              )}
             </div>
 
             <div className="form-group-item">
               <label>Class Schedule *</label>
               <input
                 type="text"
+                placeholder="e.g. Mon & Wed • 4:00 PM - 5:30 PM"
                 value={formData.schedule}
                 onChange={(e) => setFormData({ ...formData, schedule: e.target.value })}
                 required
@@ -349,6 +413,7 @@ function AdminCourses() {
               <label>Tuition Fee (USD) *</label>
               <input
                 type="number"
+                min="0"
                 value={formData.fee}
                 onChange={(e) => setFormData({ ...formData, fee: Number(e.target.value) })}
                 required
@@ -359,6 +424,7 @@ function AdminCourses() {
               <label>Student Capacity *</label>
               <input
                 type="number"
+                min="1"
                 value={formData.capacity}
                 onChange={(e) => setFormData({ ...formData, capacity: Number(e.target.value) })}
                 required

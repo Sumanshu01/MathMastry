@@ -7,10 +7,22 @@ yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
 
+# Dependencies
 node_modules
+frontend/node_modules
+backend/node_modules
+
+# Build output
 dist
 dist-ssr
+frontend/dist
 *.local
+
+# Environment files
+.env
+.env.local
+.env.*.local
+backend/.env
 
 # Editor directories and files
 .vscode/*
@@ -22,3 +34,12 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Test coverage
+coverage
+frontend/coverage
+backend/coverage
+
+# Misc
+cookies.txt
+backend/cookies.txt

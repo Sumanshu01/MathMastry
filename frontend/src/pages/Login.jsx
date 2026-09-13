@@ -75,18 +75,6 @@ function Login() {
     }
   };
 
-  const handleDemoLogin = (role) => {
-    const demoUser = {
-      id: `u-${role.toLowerCase()}-1`,
-      firstName: role === "ADMIN" ? "Platform" : role === "TEACHER" ? "Sarah" : "Alex",
-      lastName: role === "ADMIN" ? "Administrator" : role === "TEACHER" ? "Jenkins" : "Mercer",
-      email: role === "ADMIN" ? "admin@mathmastry.com" : role === "TEACHER" ? "teacher@mathmastry.com" : "student@example.com",
-      role: role,
-      emailVerified: true
-    };
-    login(demoUser);
-    navigate(getRoleRedirectPath(role));
-  };
 
   return (
     <div className="login-page">
@@ -150,36 +138,8 @@ function Login() {
           </p>
         )}
 
-        <div style={{ marginTop: "18px", paddingTop: "14px", borderTop: "1px solid #e5e7eb", textAlign: "center" }}>
-          <p style={{ fontSize: "12px", color: "#6b7280", marginBottom: "8px", fontWeight: 600 }}>
-            QUICK DEMO ACCESS (ONE-CLICK)
-          </p>
-          <div style={{ display: "flex", gap: "6px", justifyContent: "center" }}>
-            <button
-              type="button"
-              onClick={() => handleDemoLogin("STUDENT")}
-              style={{ padding: "6px 12px", fontSize: "12px", borderRadius: "6px", border: "1px solid #d1d5db", background: "#f9fafb", cursor: "pointer" }}
-            >
-              Student Demo
-            </button>
-            <button
-              type="button"
-              onClick={() => handleDemoLogin("TEACHER")}
-              style={{ padding: "6px 12px", fontSize: "12px", borderRadius: "6px", border: "1px solid #d1d5db", background: "#f9fafb", cursor: "pointer" }}
-            >
-              Teacher Demo
-            </button>
-            <button
-              type="button"
-              onClick={() => handleDemoLogin("ADMIN")}
-              style={{ padding: "6px 12px", fontSize: "12px", borderRadius: "6px", border: "1px solid #d1d5db", background: "#f9fafb", cursor: "pointer" }}
-            >
-              Admin Demo
-            </button>
-          </div>
-        </div>
 
-        <p className="forgot-password-link" style={{ marginTop: "16px" }}>
+        <p className="forgot-password-link">
           <Link to="/forgot-password">
             Forgot Password?
           </Link>

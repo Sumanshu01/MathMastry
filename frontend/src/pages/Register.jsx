@@ -1,10 +1,13 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import api from "../services/api";
+import { useAuth } from "../context/AuthContext";
+import { getRoleRedirectPath } from "../services/authService";
 import "./Register.css";
 
 function Register() {
   const navigate = useNavigate();
+  const { login } = useAuth();
 
   const [formData, setFormData] = useState({
     firstName: "",
@@ -17,9 +20,7 @@ function Register() {
 
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
-  const [message, setMessage] = useState("");
   const [serverError, setServerError] = useState("");
-  const [isOffline, setIsOffline] = useState(false);
 
   const validateField = (name, value) => {
     switch (name) {
@@ -89,9 +90,7 @@ function Register() {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    setMessage("");
     setServerError("");
-    setIsOffline(false);
 
     if (!validateForm()) {
       return;
@@ -111,41 +110,26 @@ function Register() {
 
     try {
       const response = await api.post("/auth/register", payload);
+      const { user } = response.data;
 
-      const successMsg = response.data?.message || "Registration successful! Redirecting to email verification...";
-      setMessage(successMsg);
+      // Auto-login: store user in auth context + localStorage
+      login(user);
 
-      localStorage.setItem("verificationEmail", payload.email);
-
-      setTimeout(() => {
-        navigate("/verify-email");
-      }, 1000);
+      // Redirect to role-appropriate dashboard immediately
+      navigate(getRoleRedirectPath(user.role), { replace: true });
     } catch (err) {
-      if (err.code === "ERR_NETWORK" || !err.response) {
-        setIsOffline(true);
-        setServerError(
-          "Backend API at localhost:5000 is unreachable or offline. You can proceed with Demo Verification below."
-        );
-      } else {
-        const data = err.response?.data;
-        if (data?.errors && typeof data.errors === "object") {
-          setErrors(data.errors);
-        }
-        setServerError(
-          data?.error ||
-          data?.message ||
-          "Registration failed. Please verify your details."
-        );
+      const data = err.response?.data;
+      if (data?.errors && typeof data.errors === "object") {
+        setErrors(data.errors);
       }
+      setServerError(
+        data?.error ||
+        data?.message ||
+        "Registration failed. Please check your details and try again."
+      );
     } finally {
       setLoading(false);
     }
-  };
-
-  const handleDemoProceed = () => {
-    const email = formData.email.trim() || "student@example.com";
-    localStorage.setItem("verificationEmail", email);
-    navigate("/verify-email");
   };
 
   return (
@@ -275,25 +259,8 @@ function Register() {
           </button>
         </form>
 
-        {message && (
-          <p className="success-message">{message}</p>
-        )}
-
         {serverError && (
           <p className="error-message">{serverError}</p>
-        )}
-
-        {isOffline && (
-          <div className="offline-demo-box">
-            <p style={{ margin: "0 0 6px" }}>Backend server offline at port 5000.</p>
-            <button
-              type="button"
-              className="offline-demo-btn"
-              onClick={handleDemoProceed}
-            >
-              Continue to Verify Email (Demo) →
-            </button>
-          </div>
         )}
 
         <p className="login-text">

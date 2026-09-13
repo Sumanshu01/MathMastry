@@ -5,6 +5,7 @@ import { ToastProvider } from "./context/ToastContext";
 // Auth & Public Pages
 import Login from "./pages/Login";
 import Register from "./pages/Register";
+import Landing from "./pages/Landing";
 import VerifyEmail from "./pages/VerifyEmail";
 import LoginVerify from "./pages/LoginVerify";
 import ForgotPassword from "./pages/ForgotPassword";
@@ -41,9 +42,11 @@ function App() {
       <ToastProvider>
         <BrowserRouter>
           <Routes>
-            {/* Public Auth Flow */}
+            {/* Landing — always public, no restriction */}
+            <Route path="/" element={<Landing />} />
+
+            {/* Auth routes — restricted (redirect to dashboard if already logged in) */}
             <Route element={<PublicRoute restricted />}>
-              <Route path="/" element={<Login />} />
               <Route path="/login" element={<Login />} />
               <Route path="/register" element={<Register />} />
             </Route>

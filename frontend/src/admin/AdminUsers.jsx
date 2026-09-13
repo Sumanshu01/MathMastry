@@ -73,22 +73,32 @@ function AdminUsers() {
     showToast("User account deleted.", "info");
   };
 
-  const handleCreateUser = (e) => {
+  const handleCreateUser = async (e) => {
     e.preventDefault();
     if (!newUser.firstName.trim() || !newUser.lastName.trim() || !newUser.email.trim()) {
       showToast("Please fill in all required user fields.", "warning");
       return;
     }
-    const created = {
-      id: `u-${Date.now()}`,
-      ...newUser,
-      emailVerified: true
-    };
-    setUsers([created, ...users]);
-    setIsCreateModalOpen(false);
-    setNewUser({ firstName: "", lastName: "", email: "", phone: "", role: "STUDENT" });
-    showToast(`User account created for ${created.firstName} ${created.lastName}.`, "success");
+
+    try {
+      const res = await api.post("/admin/users", {
+        firstName: newUser.firstName.trim(),
+        lastName: newUser.lastName.trim(),
+        email: newUser.email.trim().toLowerCase(),
+        phone: newUser.phone.trim() || null,
+        role: newUser.role,
+      });
+      const created = res.data.user;
+      setUsers([created, ...users]);
+      setIsCreateModalOpen(false);
+      setNewUser({ firstName: "", lastName: "", email: "", phone: "", role: "STUDENT" });
+      showToast(`Account created for ${created.firstName} ${created.lastName}. Default password: ChangeMe123!`, "success");
+    } catch (err) {
+      const msg = err.response?.data?.error || err.response?.data?.message || err.message;
+      showToast("Failed to create user: " + msg, "error");
+    }
   };
+
 
   const filteredUsers = users.filter((user) => {
     const name = `${user.firstName || ""} ${user.lastName || ""}`.toLowerCase();
